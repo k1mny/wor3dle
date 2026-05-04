@@ -1,12 +1,12 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useCallback, useEffect, useRef } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import { checkClear } from './logic';
 import { useBoxApiState, useClearState } from './states';
 
 const BlockCheck = () => {
   const ref = useRef([]);
-  const boxApi = useRecoilValue(useBoxApiState);
+  const boxApi = useAtomValue(useBoxApiState);
   // 定期的に各ブロックの高さを取得
   useFrame(({ clock }) => {
     // 判定
@@ -18,7 +18,7 @@ const BlockCheck = () => {
   });
 
   const { viewport } = useThree();
-  const [clear, setClear] = useRecoilState(useClearState);
+  const [clear, setClear] = useAtom(useClearState);
 
   const checkClearContinuously = useCallback(() => {
     if (clear !== 'clear' && clear !== 'failed') {

@@ -1,4 +1,4 @@
-import { atom } from 'recoil';
+import { atom } from 'jotai';
 
 const date = new Date();
 const [month, day, year] = [
@@ -10,103 +10,115 @@ const dateStr =
   year.toString() + ('00' + month).slice(-2) + ('00' + day).slice(-2);
 const localStorageName = 'wor3dle-results';
 
-const localStorageDailyEffect =
-  (key) =>
-  ({ setSelf, onSet }) => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    let savedValue = localStorage.getItem(localStorageName);
-    if (savedValue !== null) {
-      const lsObj = JSON.parse(savedValue);
-      if (lsObj[dateStr] != undefined && lsObj[dateStr][key] != undefined) {
-        setSelf(lsObj[dateStr][key]);
-      }
-    }
+const getStoredResults = () => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
 
-    onSet((newValue, _, isReset) => {
-      savedValue = localStorage.getItem(localStorageName);
-      let setObj = { [dateStr]: { [key]: newValue } };
-      if (savedValue !== null) {
-        const lsObj = JSON.parse(savedValue);
-        const targetObj = lsObj[dateStr];
-        const newKeyObj = {
-          ...targetObj,
+  const savedValue = localStorage.getItem(localStorageName);
+  if (savedValue === null) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(savedValue);
+  } catch {
+    return {};
+  }
+};
+
+const setStoredResults = (value) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.setItem(localStorageName, JSON.stringify(value));
+};
+
+const normalizeStoredValue = (value) => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const withDailyStorage = (baseAtom, key) => {
+  baseAtom.onMount = (setAtom) => {
+    const stored = getStoredResults();
+    const dailyValue = stored[dateStr]?.[key];
+
+    if (dailyValue !== undefined) {
+      setAtom(dailyValue);
+    }
+  };
+
+  return atom(
+    (get) => get(baseAtom),
+    (get, set, update) => {
+      const currentValue = get(baseAtom);
+      const newValue =
+        typeof update === 'function' ? update(currentValue) : update;
+      set(baseAtom, newValue);
+
+      const stored = getStoredResults();
+      setStoredResults({
+        ...stored,
+        [dateStr]: {
+          ...stored[dateStr],
           [key]: newValue,
-        };
-        setObj = { ...lsObj, [dateStr]: newKeyObj };
-      }
+        },
+      });
+    }
+  );
+};
 
-      localStorage.setItem(localStorageName, JSON.stringify(setObj));
-    });
+const withStorage = (baseAtom, key) => {
+  baseAtom.onMount = (setAtom) => {
+    const stored = getStoredResults();
+    const storedValue = stored[key];
+
+    if (storedValue !== undefined && storedValue !== null) {
+      setAtom(normalizeStoredValue(storedValue));
+    }
   };
 
-const localStorageEffect =
-  (key) =>
-  ({ setSelf, onSet }) => {
-    if (typeof window === 'undefined') {
-      return;
+  return atom(
+    (get) => get(baseAtom),
+    (get, set, update) => {
+      const currentValue = get(baseAtom);
+      const newValue =
+        typeof update === 'function' ? update(currentValue) : update;
+      set(baseAtom, newValue);
+
+      const stored = getStoredResults();
+      setStoredResults({
+        ...stored,
+        [key]: newValue,
+      });
     }
-    let savedValue = localStorage.getItem(localStorageName);
-    if (savedValue != null) {
-      const lsObj = JSON.parse(savedValue);
-      if (lsObj[key] != null) {
-        setSelf(JSON.parse(lsObj[key]));
-      }
-    }
+  );
+};
 
-    onSet((newValue, _, isReset) => {
-      console.log('set: ', newValue);
-      savedValue = localStorage.getItem(localStorageName);
-      const lsObj = JSON.parse(savedValue);
-      localStorage.setItem(
-        localStorageName,
-        JSON.stringify({ ...lsObj, [key]: newValue })
-      );
-    });
-  };
+export const useBoxApiState = atom([]);
 
-export const useBoxApiState = atom({
-  key: 'useBoxApiState',
-  default: [],
-  dangerouslyAllowMutability: true,
-});
+export const useClearState = withDailyStorage(atom(null), 'game-state');
 
-export const useClearState = atom({
-  key: 'useClearState',
-  default: null,
-  effects: [localStorageDailyEffect('game-state')],
-});
+export const useWordleResultTextState = withDailyStorage(
+  atom([]),
+  'result-text'
+);
 
-export const useWordleResultTextState = atom({
-  key: 'useWordleResultTextState',
-  default: [],
-  effects: [localStorageDailyEffect('result-text')],
-});
+export const useWordInputState = atom('');
 
-export const useWordInputState = atom({
-  key: 'useWordInputState',
-  default: '',
-});
+export const useContentsState = atom([]);
 
-export const useContentsState = atom({
-  key: 'useContentsState',
-  default: [],
-});
+export const useWrongMessageState = atom('');
 
-export const useWrongMessageState = atom({
-  key: 'useWrongMessageState',
-  default: '',
-});
+export const useInfoModalState = withStorage(atom(true), 'is-info-open');
 
-export const useInfoModalState = atom({
-  key: 'useInfoModalState',
-  default: true,
-  effects: [localStorageEffect('is-info-open')],
-});
-
-export const useCountInputState = atom({
-  key: 'useCountInputState',
-  default: 0,
-  effects: [localStorageDailyEffect('count-input')],
-});
+export const useCountInputState = withDailyStorage(atom(0), 'count-input');

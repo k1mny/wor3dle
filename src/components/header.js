@@ -11,7 +11,7 @@ import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ModalSettings from './modal/settings';
 import ModalInfo from './modal/info';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { useInfoModalState } from './states';
 
 export default function Header() {
@@ -19,7 +19,7 @@ export default function Header() {
   const handleOpenSettings = () => setOpenSettings(true);
   const handleCloseSettings = () => setOpenSettings(false);
 
-  const [openInfo, setOpenInfo] = useRecoilState(useInfoModalState);
+  const [openInfo, setOpenInfo] = useAtom(useInfoModalState);
   const handleOpenInfo = () => setOpenInfo(true);
   const handleCloseInfo = () => setOpenInfo(false);
 

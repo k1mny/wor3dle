@@ -1,11 +1,11 @@
 import { usePlane } from '@react-three/cannon';
 import { useThree } from '@react-three/fiber';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 import { useClearState } from './states';
 
 export default function Borders() {
   const { viewport } = useThree();
-  const clear = useRecoilValue(useClearState);
+  const clear = useAtomValue(useClearState);
   return (
     <>
       <Plane

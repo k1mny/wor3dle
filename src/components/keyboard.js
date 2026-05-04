@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Keyboard from 'react-simple-keyboard';
-import { useRecoilState, useSetRecoilState } from 'recoil';
+import { useAtom, useSetAtom } from 'jotai';
 import {
   useBoxApiState,
   useClearState,
@@ -20,11 +20,11 @@ import {
 } from './constants';
 
 export default function SoftKeyboard(props) {
-  const [wordInput, setWordInput] = useRecoilState(useWordInputState);
-  const [contents, setContents] = useRecoilState(useContentsState);
-  const [clear, setClear] = useRecoilState(useClearState);
-  const [boxApi, setBoxApi] = useRecoilState(useBoxApiState);
-  const setWrongMessage = useSetRecoilState(useWrongMessageState);
+  const [wordInput, setWordInput] = useAtom(useWordInputState);
+  const [contents, setContents] = useAtom(useContentsState);
+  const [clear, setClear] = useAtom(useClearState);
+  const [boxApi, setBoxApi] = useAtom(useBoxApiState);
+  const setWrongMessage = useSetAtom(useWrongMessageState);
   const [putEnter, setPutEnter] = useState(false);
   const [end, setEnd] = useState(false);
   const keyboard = useRef();

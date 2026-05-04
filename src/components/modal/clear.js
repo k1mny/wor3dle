@@ -7,7 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import { COLOR_CLEAR, COLOR_INCORRECT } from '../constants';
 import { getWordleAnswer } from '../logic';
 import {
@@ -42,11 +42,11 @@ const [month, day, year] = [
 ];
 
 export default function ModalClear() {
-  const clear = useRecoilValue(useClearState);
-  const boxApi = useRecoilValue(useBoxApiState);
-  const wordInput = useRecoilValue(useWordInputState);
-  const [resultText, setResultText] = useRecoilState(useWordleResultTextState);
-  const [countInput, setCountInput] = useRecoilState(useCountInputState);
+  const clear = useAtomValue(useClearState);
+  const boxApi = useAtomValue(useBoxApiState);
+  const wordInput = useAtomValue(useWordInputState);
+  const [resultText, setResultText] = useAtom(useWordleResultTextState);
+  const [countInput, setCountInput] = useAtom(useCountInputState);
   const [anchorEl, setAnchorEl] = useState(null);
 
   const ref = useRef([]);

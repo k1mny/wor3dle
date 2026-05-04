@@ -1,6 +1,6 @@
-import { Box, Modal, Popover, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { Box } from '@mui/material';
+import React, { useEffect } from 'react';
+import { useAtom } from 'jotai';
 import { useWrongMessageState } from '../states';
 
 const style = {
@@ -16,19 +16,17 @@ const style = {
 };
 
 export default function PopoverMessage(props) {
-  const [open, setOpen] = useState(false);
-  const [wrongMessage, setWrongMessage] = useRecoilState(useWrongMessageState);
+  const [wrongMessage, setWrongMessage] = useAtom(useWrongMessageState);
+  const open = wrongMessage.length > 0;
 
   useEffect(() => {
     if (wrongMessage.length > 0) {
-      setOpen(true);
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setWrongMessage('');
       }, 1000);
-    } else {
-      setOpen(false);
+      return () => clearTimeout(timeoutId);
     }
-  }, [wrongMessage]);
+  }, [setWrongMessage, wrongMessage]);
 
   return (
     <>

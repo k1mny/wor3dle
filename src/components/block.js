@@ -1,7 +1,7 @@
 import { useBox } from '@react-three/cannon';
 import { useFrame, extend } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { useBoxApiState, useWordInputState } from './states';
@@ -43,7 +43,7 @@ export default function Model({ index, boxChar, queuePos }) {
   const mat = useRef();
   const matText = useRef();
 
-  const wordInput = useRecoilValue(useWordInputState);
+  const wordInput = useAtomValue(useWordInputState);
   useEffect(() => {
     if (wordInput.length === 0) {
       setTimeout(() => {
@@ -60,7 +60,7 @@ export default function Model({ index, boxChar, queuePos }) {
     // mass while in the input queue
     // mass: 0 inside useBox は 後からmass > 0にしてもboxの物理演算ができなくなるため
     api.mass.set(0);
-  }, []);
+  }, [api.mass]);
 
   // 一定間隔ごとに色を更新
   useFrame(({ clock }) => {
@@ -79,7 +79,7 @@ export default function Model({ index, boxChar, queuePos }) {
     }
   });
 
-  const setBoxApi = useSetRecoilState(useBoxApiState);
+  const setBoxApi = useSetAtom(useBoxApiState);
   useEffect(() => {
     setBoxApi((old) => [...old, { id: index, ref: ref, api: api, mat: mat }]);
   }, [api, index, ref, mat, setBoxApi]);
