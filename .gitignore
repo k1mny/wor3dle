@@ -24,6 +24,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+dev-server-*.log
+
+# browser smoke tests
+/.edge-test-profile*/
+/smoke-*.png
 
 # local env files
 .env.local

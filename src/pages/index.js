@@ -11,6 +11,8 @@ export default function Home() {
     };
     window.addEventListener('resize', setFillHeight);
     setFillHeight();
+
+    return () => window.removeEventListener('resize', setFillHeight);
   }, []);
 
   return (

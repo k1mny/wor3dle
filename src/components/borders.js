@@ -1,11 +1,8 @@
 import { usePlane } from '@react-three/cannon';
 import { useThree } from '@react-three/fiber';
-import { useAtomValue } from 'jotai';
-import { useClearState } from './states';
 
 export default function Borders() {
   const { viewport } = useThree();
-  const clear = useAtomValue(useClearState);
   return (
     <>
       <Plane
@@ -21,7 +18,7 @@ export default function Borders() {
   );
 }
 
-function Plane({ color, ...props }) {
+function Plane(props) {
   usePlane(() => ({ ...props }));
   return null;
 }

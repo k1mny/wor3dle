@@ -1,3 +1,16 @@
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 
-export default [...nextCoreWebVitals];
+export default [
+  ...nextCoreWebVitals,
+  {
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+];

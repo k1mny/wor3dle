@@ -49,35 +49,61 @@ export default function ModalClear() {
   const [countInput, setCountInput] = useAtom(useCountInputState);
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const ref = useRef([]);
+  const positionsRef = useRef([]);
 
   useEffect(() => {
-    // make index of current box position
-    boxApi.forEach((box, index) =>
-      box.api.position.subscribe((p) => (ref.current[index] = [p[0], p[1]]))
+    positionsRef.current = [];
+
+    const unsubscribers = boxApi.map((box, index) =>
+      box.api.position.subscribe(([x, y]) => {
+        positionsRef.current[index] = [x, y];
+      })
     );
-    const boxIndex = ref.current
-      .filter((val) => {
-        return val[1] < -5 + 16;
+
+    return () => {
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
+    };
+  }, [boxApi]);
+
+  const getResultRows = useCallback(() => {
+    const indexedBoxes = positionsRef.current
+      .map((pos, apiIndex) => ({ pos, apiIndex }))
+      .filter(({ pos }) => {
+        return pos && pos[1] < -5 + 16;
       })
-      .map((pos) => {
-        return Math.round(pos[0] / 2.0) + 5 * Math.round(pos[1] / 2.0);
-      })
-      .map((i, _, self) => {
-        return i + Math.abs(Math.min(...self));
+      .map(({ pos, apiIndex }) => {
+        return {
+          apiIndex,
+          boxIndex: Math.round(pos[0] / 2.0) + 5 * Math.round(pos[1] / 2.0),
+        };
       });
-    if (boxIndex.length === 0) {
+
+    if (indexedBoxes.length === 0) {
       return [];
     }
 
-    // make result text
-    let resultBoxes = Array.apply(null, Array(Math.max(...boxIndex) + 1));
-    resultBoxes = resultBoxes.map((_, idx) => {
-      const apiPos = boxIndex.findIndex((val) => val === idx);
-      if (apiPos === -1) {
+    const minIndex = Math.min(...indexedBoxes.map(({ boxIndex }) => boxIndex));
+    const normalizedBoxes = indexedBoxes.map(({ apiIndex, boxIndex }) => ({
+      apiIndex,
+      boxIndex: boxIndex - minIndex,
+    }));
+
+    const maxIndex = Math.max(
+      ...normalizedBoxes.map(({ boxIndex }) => boxIndex)
+    );
+    const resultBoxes = Array.from({ length: maxIndex + 1 }, (_, idx) => {
+      const apiIndex = normalizedBoxes.find(
+        ({ boxIndex }) => boxIndex === idx
+      )?.apiIndex;
+      if (apiIndex === undefined) {
         return '◽';
       }
-      const obj = boxApi[apiPos];
+
+      const obj = boxApi[apiIndex];
+      if (!obj?.mat?.current) {
+        return '◽';
+      }
+
       if (COLOR_CLEAR.equals(obj.mat.current.color)) {
         return '🟩';
       } else if (COLOR_INCORRECT.equals(obj.mat.current.color)) {
@@ -86,12 +112,21 @@ export default function ModalClear() {
         return '⬛';
       }
     });
+
     const length = Math.ceil(resultBoxes.length / 5);
-    const rows = new Array(length)
-      .fill()
+    return new Array(length)
+      .fill(null)
       .map((_, i) => resultBoxes.slice(i * 5, (i + 1) * 5).join(''));
-    setResultText(rows.reverse());
-  }, [boxApi, anchorEl, clear, setResultText]);
+  }, [boxApi]);
+
+  useEffect(() => {
+    if (clear === 'clear' || clear === 'failed') {
+      const rows = getResultRows().reverse();
+      if (rows.length > 0) {
+        setResultText(rows);
+      }
+    }
+  }, [clear, getResultRows, setResultText]);
 
   const copyTextToClipboard = useCallback((text) => {
     navigator.clipboard.writeText(text).then(
@@ -115,6 +150,13 @@ export default function ModalClear() {
 
   const handleClick = useCallback(
     (event) => {
+      const currentRows = getResultRows().reverse();
+      const rows = currentRows.length > 0 ? currentRows : resultText;
+
+      if (currentRows.length > 0) {
+        setResultText(currentRows);
+      }
+
       const resultTextClip =
         'WOR3DLE ' +
         year +
@@ -125,14 +167,20 @@ export default function ModalClear() {
         '\n' +
         clearRowText +
         '\n\n' +
-        resultText.join('\n') +
+        rows.join('\n') +
         '\n\n' +
         'https://k1mny.github.io/wor3dle/';
 
       copyTextToClipboard(resultTextClip);
       setAnchorEl(event.currentTarget);
     },
-    [clearRowText, copyTextToClipboard, resultText]
+    [
+      clearRowText,
+      copyTextToClipboard,
+      getResultRows,
+      resultText,
+      setResultText,
+    ]
   );
 
   const handleClose = useCallback(() => {

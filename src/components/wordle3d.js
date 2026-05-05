@@ -1,6 +1,5 @@
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
-import { Stats } from '@react-three/drei';
 import { useAtomValue } from 'jotai';
 import Postprocessing from './postprocessing';
 import Borders from './borders';
@@ -30,6 +29,7 @@ export default function Wordle3D() {
         <PopoverMessage />
         <ModalClear />
         <Canvas
+          legacy
           shadows
           gl={{ stencil: false, depth: false, alpha: false, antialias: false }}
           camera={{ position: [0, -3, 10], fov: 50, near: 17, far: 40 }}
@@ -54,7 +54,6 @@ export default function Wordle3D() {
               ))}
             </group>
           </Physics>
-          {/* <Stats /> */}
           <Postprocessing />
         </Canvas>
       </Box>

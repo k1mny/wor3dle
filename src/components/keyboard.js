@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Keyboard from 'react-simple-keyboard';
 import { useAtom, useSetAtom } from 'jotai';
 import {
-  useBoxApiState,
   useClearState,
   useContentsState,
   useWordInputState,
@@ -11,23 +10,21 @@ import {
 } from './states';
 import 'react-simple-keyboard/build/css/index.css';
 import { checkInputWord, isCharWordleAnswer } from './logic';
-import {
-  COLOR_CLEAR,
-  COLOR_INCORRECT,
-  COLOR_WRONG,
-  CORRECT,
-  INCORRECT,
-} from './constants';
+import { CORRECT, INCORRECT } from './constants';
 
-export default function SoftKeyboard(props) {
+export default function SoftKeyboard() {
   const [wordInput, setWordInput] = useAtom(useWordInputState);
   const [contents, setContents] = useAtom(useContentsState);
   const [clear, setClear] = useAtom(useClearState);
-  const [boxApi, setBoxApi] = useAtom(useBoxApiState);
   const setWrongMessage = useSetAtom(useWrongMessageState);
   const [putEnter, setPutEnter] = useState(false);
   const [end, setEnd] = useState(false);
   const keyboard = useRef();
+  const putEnterTimeout = useRef();
+
+  useEffect(() => {
+    return () => clearTimeout(putEnterTimeout.current);
+  }, []);
 
   useEffect(() => {
     if (end) {
@@ -35,9 +32,10 @@ export default function SoftKeyboard(props) {
         setClear('failed');
       }
     } else if (contents.length >= 30 && wordInput.length === 0) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setEnd(true);
       }, 6000);
+      return () => clearTimeout(timeoutId);
     }
   }, [clear, contents.length, end, setClear, wordInput.length]);
 
@@ -50,7 +48,11 @@ export default function SoftKeyboard(props) {
             setWordInput('');
             keyboard.current.clearInput();
             setPutEnter(true);
-            setTimeout(() => setPutEnter(false), 1000);
+            clearTimeout(putEnterTimeout.current);
+            putEnterTimeout.current = setTimeout(
+              () => setPutEnter(false),
+              1000
+            );
           } else {
             setWrongMessage('Not in word list');
           }
@@ -62,7 +64,6 @@ export default function SoftKeyboard(props) {
       if (button === '{backspace}') {
         if (wordInput.length !== 0 && contents.length !== 0) {
           setWordInput((old) => old.slice(0, -1));
-          setBoxApi((old) => old.slice(0, -1));
           setContents(contents.slice(0, -1));
         }
       }

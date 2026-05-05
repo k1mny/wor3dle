@@ -3,19 +3,7 @@ import React, { useEffect } from 'react';
 import { useAtom } from 'jotai';
 import { useWrongMessageState } from '../states';
 
-const style = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
-};
-
-export default function PopoverMessage(props) {
+export default function PopoverMessage() {
   const [wrongMessage, setWrongMessage] = useAtom(useWrongMessageState);
   const open = wrongMessage.length > 0;
 

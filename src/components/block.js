@@ -1,6 +1,6 @@
 import { useBox } from '@react-three/cannon';
-import { useFrame, extend } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
+import { extend } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
@@ -20,7 +20,12 @@ import {
 } from './constants';
 extend({ TextGeometry });
 
-const SetColor = (judge) => {
+const font = new FontLoader().parse(threeFontJson);
+const colorCheckY = 12;
+const textDepth = 0.1;
+const textFaceOffset = 1.01;
+
+const getColorForJudge = (judge) => {
   if (judge === CORRECT) {
     return COLOR_CLEAR;
   } else if (judge === INCORRECT) {
@@ -45,67 +50,85 @@ export default function Model({ index, boxChar, queuePos }) {
 
   const wordInput = useAtomValue(useWordInputState);
   useEffect(() => {
-    if (wordInput.length === 0) {
-      setTimeout(() => {
-        api.mass.set(1);
-      }, 200 * queuePos);
+    if (wordInput.length !== 0) {
+      return;
     }
-  }, [api, wordInput, queuePos]);
+
+    const timeoutId = setTimeout(() => {
+      api.mass.set(1);
+    }, 200 * queuePos);
+
+    return () => clearTimeout(timeoutId);
+  }, [api.mass, wordInput.length, queuePos]);
 
   useEffect(() => {
     // color while in the input queue
-    mat.current.color = COLOR_INIT;
-    matText.current.color = COLOR_BOX_LETTER_INIT;
+    mat.current.color.copy(COLOR_INIT);
+    matText.current.color.copy(COLOR_BOX_LETTER_INIT);
 
     // mass while in the input queue
     // mass: 0 inside useBox は 後からmass > 0にしてもboxの物理演算ができなくなるため
     api.mass.set(0);
   }, [api.mass]);
 
-  // 一定間隔ごとに色を更新
-  useFrame(({ clock }) => {
-    // 判定
-    if (clock.oldTime % 10 === 0) {
-      api.position.subscribe((p) => {
-        if (p[1] < -5 + 17) {
-          const judge = Judge(p[0], boxChar);
-          mat.current.color = SetColor(judge);
-          matText.current.color =
-            mat.current.color === COLOR_WRONG
-              ? COLOR_BOX_LETTER_WRONG
-              : COLOR_BOX_LETTER;
-        }
-      });
-    }
-  });
+  useEffect(() => {
+    const unsubscribe = api.position.subscribe(([x, y]) => {
+      if (y >= colorCheckY || !mat.current || !matText.current) {
+        return;
+      }
+
+      const boxColor = getColorForJudge(Judge(x, boxChar));
+      const textColor = COLOR_WRONG.equals(boxColor)
+        ? COLOR_BOX_LETTER_WRONG
+        : COLOR_BOX_LETTER;
+      mat.current.color.copy(boxColor);
+      matText.current.color.copy(textColor);
+    });
+
+    return unsubscribe;
+  }, [api.position, boxChar]);
 
   const setBoxApi = useSetAtom(useBoxApiState);
   useEffect(() => {
-    setBoxApi((old) => [...old, { id: index, ref: ref, api: api, mat: mat }]);
+    const item = { id: index, ref: ref, api: api, mat: mat };
+
+    setBoxApi((old) =>
+      [...old.filter((box) => box.id !== index), item].sort(
+        (a, b) => a.id - b.id
+      )
+    );
+
+    return () => {
+      setBoxApi((old) => old.filter((box) => box.id !== index));
+    };
   }, [api, index, ref, mat, setBoxApi]);
 
-  const textGeo = new TextGeometry(boxChar, {
-    font: new FontLoader().parse(threeFontJson),
-    size: 1,
-    height: 0.1,
-  });
-  textGeo.computeBoundingBox();
+  const textGeo = useMemo(() => {
+    const geometry = new TextGeometry(boxChar, {
+      font,
+      size: 1,
+      depth: textDepth,
+    });
+    geometry.computeBoundingBox();
+    return geometry;
+  }, [boxChar]);
+
   const centerOffsetX =
-    -(textGeo.boundingBox.max.x - textGeo.boundingBox.min.x) / 2;
+    -(textGeo.boundingBox.max.x + textGeo.boundingBox.min.x) / 2;
   const centerOffsetY =
-    -(textGeo.boundingBox.max.y - textGeo.boundingBox.min.y) / 2;
+    -(textGeo.boundingBox.max.y + textGeo.boundingBox.min.y) / 2;
 
   return (
     <group ref={ref}>
       <mesh
-        position={[1, centerOffsetY, -centerOffsetX]}
+        position={[textFaceOffset, centerOffsetY, -centerOffsetX]}
         rotation={[0, Math.PI / 2, 0]}
-        args={[textGeo]}
       >
-        <meshStandardMaterial ref={matText} attach="material" opacity={0.5} />
+        <primitive object={textGeo} attach="geometry" />
+        <meshStandardMaterial ref={matText} attach="material" roughness={1} />
       </mesh>
       <mesh>
-        <boxBufferGeometry args={[2, 2, 2]} />
+        <boxGeometry args={[2, 2, 2]} />
         <meshStandardMaterial ref={mat} attach="material" opacity={1} />
       </mesh>
     </group>

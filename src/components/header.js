@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  AppBar,
-  Box,
-  IconButton,
-  Modal,
-  Toolbar,
-  Typography,
-} from '@mui/material';
+import { AppBar, IconButton, Toolbar, Typography } from '@mui/material';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ModalSettings from './modal/settings';
@@ -44,9 +37,8 @@ export default function Header() {
           <Typography
             variant="h1"
             color="inherit"
-            fontSize="2rem"
             align="center"
-            sx={{ flexBasis: '96%' }}
+            sx={{ flexBasis: '96%', fontSize: '2rem', lineHeight: 1.2 }}
           >
             WOR<span style={{ color: 'yellow' }}>3D</span>LE
           </Typography>
